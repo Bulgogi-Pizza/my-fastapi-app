@@ -29,8 +29,36 @@ async def say_hello(name: str):
 # http://localhost:8000/redoc - ReDoc 자동 제공
 
 # --- 새로운 POST 엔드포인트 추가 ---
-@app.post("/items")
-async def create_item(item: Item): # 요청 본문을 Item 모델로 받는다.
-  # 지금은 받은 아이템 그대로 반환한다.
-  # 실제 앱은 이 데이터를 데이터베이스에 저장할 것이다.
-  return item
+# @app.post("/items")
+# async def create_item(item: Item): # 요청 본문을 Item 모델로 받는다.
+#   # 지금은 받은 아이템 그대로 반환한다.
+#   # 실제 앱은 이 데이터를 데이터베이스에 저장할 것이다.
+#   return item
+
+# POST 엔드포인트 수정: response_model=Item 추가
+@app.post("/items/", response_model=Item)
+async def create_item(item: Item): # 요청 본문은 Item 모델로 받습니다.
+  # 'item'은 클라이언트로부터 받은 Item 모델의 인스턴스입니다.
+
+  # 여기서 우리는 item 객체를 바로 반환합니다.
+  # FastAPI는 reponse_model=Item 설정에 따라
+  # 이 item 객체를 Item 스키마에 맞춰 JSON으로 직렬화하여 응답한디ㅏ.
+  # 만약 item 객체에 Item 모델에 정의되지 않은 추가 속성이 있더라도,
+  # response_model 덕분에 그 속성들은 최종 응답에서 필터링됩니다.
+
+  # 데이터 필터링 기능을 더 명확히 보여주기 위한 예시:
+  # 함수 내부에서 처리된 데이터가 Item 모델에 없는 추가 정보를 포함하고 있다고 가정해 봅시다.
+  processed_data_with_extra_info = item.model_dump() # Pydantic 모델을 딕셔너리로 변환
+  processed_data_with_extra_info["server_secret_code"] = "XYZ123_SECRET" # Item 모델에는 없는 필드
+  processed_data_with_extra_info["item_statis"] = "processing" # Item 모델에는 없는 필드
+
+  # 만약 위 processed_data_with_extra_info 딕셔너리를 반환하면,
+  # FastAPI는 response_model=Item 에 정의된 필드들만 포함하여 응답을 구성합니다.
+  # 즉, "server_secret_code"와 "item_status"는 최종 HTTP 응답에서 제외됩니다.
+
+  # print(f"서버 내부에서 처리된 데이터: {processed_data_with_extra_info}") # 로그 확인용
+
+  # 하지만 지금은 위 딕셔너리 대신, 원래의 item 객체를 반환해서
+  # response_model이 어떻게 동작하는기 기본적인 부분을 보겠습니다.
+  # Pydantic 모델 객체를 반환하면, response_model에 정의된 필드만 직렬화됩니다.
+  return item # 이 item 객체는 이미 Item 모델의 형태를 따릅니다.
