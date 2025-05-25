@@ -17,3 +17,5 @@ async def say_hello(name: str):
 
 # PyCharm에서 실행 설정을 사용하거나, 터이멀에서 uvicorn을 직접 실행할 수 있습니다.
 # 터미널에서 실행하려면: uvicorn main:app --reload
+# http://localhost:8000/docs - swagger UI 자동 제공
+# http://localhost:8000/redoc - ReDoc 자동 제공
