@@ -56,9 +56,42 @@ async def create_item(item: Item): # 요청 본문은 Item 모델로 받습니�
   # FastAPI는 response_model=Item 에 정의된 필드들만 포함하여 응답을 구성합니다.
   # 즉, "server_secret_code"와 "item_status"는 최종 HTTP 응답에서 제외됩니다.
 
-  # print(f"서버 내부에서 처리된 데이터: {processed_data_with_extra_info}") # 로그 확인용
+  print(f"서버 내부에서 처리된 데이터: {processed_data_with_extra_info}") # 로그 확인용
 
   # 하지만 지금은 위 딕셔너리 대신, 원래의 item 객체를 반환해서
   # response_model이 어떻게 동작하는기 기본적인 부분을 보겠습니다.
   # Pydantic 모델 객체를 반환하면, response_model에 정의된 필드만 직렬화됩니다.
   return item # 이 item 객체는 이미 Item 모델의 형태를 따릅니다.
+
+# 쿼리 매개변수를 사용하는 새로운 GET 엔드포인트
+@app.get("/items_list/")
+async def read_items_list(q: Union[str, None] = None, skip: int = 0, limit: int = 10):
+  # q: 검색을 위한 선택적 문자열 쿼리 매개변수
+  # skip: 건너뛸 아이템 수, 기본값 0
+  # limit: 반환할 최대 아이템 수, 기본값 10
+
+  # 실제 애플리케이션에서는 이 값들을 사용해서 데이터베이스에서 데이터를 조회하겠지만
+  # 여기서는 간단히 받은 쿼리 매개변수들과 함께 가상의 아이템 목록을 반환해 봅시다.
+
+  fake_items_db = [
+    {"id": 1, "name": "노트북"},
+    {"id": 2, "name": "마우스"},
+    {"id": 3, "name": "키보드"},
+    {"id": 4, "name": "모니터"},
+    {"id": 5, "name": "USB 허브"},
+    {"id": 6, "name": "웹캠"},
+    {"id": 7, "name": "노이즈캔슬링 헤드폰"},
+    {"id": 8, "name": "스마트폰"},
+    {"id": 9, "name": "태블릿"},
+    {"id": 10, "name": "블루투스 스피커"}
+  ]
+
+  current_items = fake_items_db
+
+  if q:
+    current_items = [item for item in current_items if q.lower() in item["name"].lower()]
+
+  # skip과 limit 적용
+  paginated_items = current_items[skip: skip + limit]
+
+  return {"query_parameters": {"q": q, "skip": skip, "limit": limit}, "items_on_this_page": paginated_items}
