@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Union # Union 타입을 사용하기 위해 가져온다. (Python 3.9 이하는 Optional을 사용하려면 from typing import Optional)
 
 # FastAPI 애플리케이션 인스턴스 생성
@@ -7,17 +7,48 @@ app = FastAPI()
 
 # --- Pydantic 모델 정의 ---
 class Item(BaseModel):
-  name: str
-  description: Union[str, None] = None # 설명은 선택 사항 (문자열 또는 None)
-  price: float
-  tax: Union[float, None] = None # 세금도 선택 사항 (실수 또는 None)
+  name: str = Field(
+      ...,
+      title="Item Name",
+      description="The name of the item. Must be between 3 and 50 characters",
+      min_length=3,
+      max_length=50
+  )
+  description: Union[str, None] = Field(
+      default=None,
+      title="Item Description",
+      description="An optional description of the item. Max 200 Characters",
+      min_length=200
+  ) # 설명은 선택 사항 (문자열 또는 None)
+  price: float = Field(
+      ...,
+      gt=0, # gt = greater than. 0보다 커야 합니다.
+      title="Item Price",
+      description="The price of the item. Must be greater than zero"
+  )
+  tax: Union[float, None] = Field(
+      default=None,
+      ge=0, # greater than or equal to. 0보다 크거나 같아야 합니다
+      title="Item Tax",
+      description="An optional tax for the item. Must be non-negative if provided"
+  ) # 세금도 선택 사항 (실수 또는 None)
 
 # --- 기존 엔드포인트들 ---
-@app.get("/")
+@app.get(
+    "/",
+    tags=["General"],
+    summary="Root Path",
+    description="Returns a simple welcome message to the API"
+)
 async def read_root():
   return {"message": "Hello World!!!, FastAPI 세상에 오신 것을 환영합니다. PyCharm에서 만들었어요."}
 
-@app.get("/hello/{name}")
+@app.get(
+    "/hello/{name}",
+    tags=["General"],
+    summary="Personalized Greeting",
+    description="Returns a Personalized greeting to the given name"
+)
 async def say_hello(name: str):
   # name 매개변수는 URL 경로에서 받아오고, 타입은 문자열(str)로 지정합니다.
   # FastAPI가 자동으로 데이터 유효성 검사도 해줍니다.
@@ -36,7 +67,20 @@ async def say_hello(name: str):
 #   return item
 
 # POST 엔드포인트 수정: response_model=Item 추가
-@app.post("/items/", response_model=Item)
+@app.post(
+    "/items/",
+    response_model=Item,
+    tags=["Items"],
+    summary="Create an Item",
+    description="""
+Create an item with all the information:
+- **name**: Each item must have a name (3 to 50 characters).
+- **description**: Optional description (max 200 characters).
+- **price**: Price must be greater than zero.
+- **tax**: Optional tax, must be non-negative if provided.
+    """,
+    response_description="The item that was successfully created, conforming to the Item model."
+)
 async def create_item(item: Item): # 요청 본문은 Item 모델로 받습니다.
   # 'item'은 클라이언트로부터 받은 Item 모델의 인스턴스입니다.
 
@@ -64,7 +108,13 @@ async def create_item(item: Item): # 요청 본문은 Item 모델로 받습니�
   return item # 이 item 객체는 이미 Item 모델의 형태를 따릅니다.
 
 # 쿼리 매개변수를 사용하는 새로운 GET 엔드포인트
-@app.get("/items_list/")
+@app.get(
+    "/items_list/",
+    tags=["Items"], # "Items" 태그로 그룹화합니다.
+    summary="Read a List of Items",
+    description="Retrieve a list of items. You can use `q` for searching by name, and `skip` & `limit` for pagination.",
+    response_description="A dictionary containing the query parameters used and a list of items on the current page."
+)
 async def read_items_list(q: Union[str, None] = None, skip: int = 0, limit: int = 10):
   # q: 검색을 위한 선택적 문자열 쿼리 매개변수
   # skip: 건너뛸 아이템 수, 기본값 0
@@ -95,3 +145,4 @@ async def read_items_list(q: Union[str, None] = None, skip: int = 0, limit: int 
   paginated_items = current_items[skip: skip + limit]
 
   return {"query_parameters": {"q": q, "skip": skip, "limit": limit}, "items_on_this_page": paginated_items}
+
