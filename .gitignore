@@ -1,0 +1,28 @@
+# 가상 환경
+venv/
+*.venv
+env/
+ENV/
+
+# 파이썬 캐시 파일 및 폴더
+__pycache__/
+*.py[cod]
+*$py.class
+
+# IDE/에디터 설정 파일 (예시)
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# 운영체제 파일
+.DS_Store
+Thumbs.db
+
+# 로그 파일
+*.log
+
+# 환경 변수 파일 (민감한 정보 포함 가능)
+.env
+*.env.*
+!*.env.example
